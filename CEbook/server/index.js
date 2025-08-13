@@ -6,7 +6,7 @@ import path from "path"
 import { fileURLToPath } from "url"
 
 const app = express()
-const port = 8080
+const port = process.env.PORT || 8080
 
 app.use(cors())
 app.use(express.json())
@@ -18,16 +18,16 @@ app.get("/api", (req, res) => {
   res.json({ message: "hello KSU YES I CAN" })
 })
 
-// สำหรับใช้ path แบบ __dirname ใน ES Module
+// ✅ ใช้ __dirname แบบ ES Module
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// 🔁 Serve static files from React build folder (login-react/build)
+// ✅ Serve React Build ที่อยู่ ../../login-react/build
 app.use(express.static(path.join(__dirname, "../../login-react/build")))
 
-// 🔁 สำหรับทุกเส้นทาง (เช่น /, /login, /dashboard) ส่ง index.html
+// ✅ ส่ง index.html สำหรับทุก route ที่ไม่ใช่ API
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../../login-react/build/index.html"))
+  res.sendFile(path.join(__dirname, "../../login-react/build", "index.html"))
 })
 
 app.listen(port, () => {
