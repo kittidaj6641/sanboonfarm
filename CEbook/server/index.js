@@ -22,11 +22,11 @@ app.get("/api", (req, res) => {
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-app.use(express.static(path.join(__dirname, "../login-react/build")))
+// ✅ เปลี่ยน path ให้ถูกต้อง: login-react อยู่นอก CEbook ต้องถอย 2 ขั้น
+app.use(express.static(path.join(__dirname, "../../login-react/build")))
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../login-react/build", "index.html"))
+  res.sendFile(path.join(__dirname, "../../login-react/build", "index.html"))
 })
-
 
 app.listen(port, () => {
   console.log("server running at port " + port)
