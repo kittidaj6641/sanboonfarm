@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ข้อมูลคุณภาพน้ำ</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 90%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        #logoutBtn {
+            display: block;
+            width: 100px;
+            margin: 20px auto 0;
+            padding: 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+        }
+        #logoutBtn:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ข้อมูลคุณภาพน้ำ - ฟาร์มกุ้งก้ามกราม</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>ลำดับ</th>
+                    <th>ความเค็ม (ppt)</th>
+                    <th>pH</th>
+                    <th>ออกซิเจน (mg/L)</th>
+                    <th>ไนโตรเจน (mg/L)</th>
+                    <th>ไฮโดรเจนซัลไฟด์ (mg/L)</th>
+                    <th>BOD (mg/L)</th>
+                    <th>อุณหภูมิ (°C)</th>
+                    <th>วันที่และเวลา</th>
+                </tr>
+            </thead>
+            <tbody id="waterQualityTable"></tbody>
+        </table>
+        <button id="logoutBtn" onclick="logout()">ออกจากระบบ</button> <!-- ปุ่ม Logout -->
+    </div>
+
+    <script>
+        async function fetchWaterQuality() {
+            const token = localStorage.getItem('token');
+            const tableBody = document.getElementById('waterQualityTable');
+
+            try {
+                const response = await fetch('http://localhost:8080/member/water-quality', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('ไม่สามารถดึงข้อมูลได้');
+                }
+
+                const data = await response.json();
+                tableBody.innerHTML = data.map((row, index) => `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${row.salinity}</td>
+                        <td>${row.ph}</td>
+                        <td>${row.dissolved_oxygen}</td>
+                        <td>${row.nitrogen}</td>
+                        <td>${row.hydrogen_sulfide}</td>
+                        <td>${row.bod}</td>
+                        <td>${row.temperature}</td>
+                        <td>${new Date(row.recorded_at).toLocaleString('th-TH')}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                tableBody.innerHTML = `<tr><td colspan="9">เกิดข้อผิดพลาด: ${error.message}</td></tr>`;
+                console.error(error);
+            }
+        }
+
+        async function logout() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch('http://localhost:8080/member/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    localStorage.removeItem('token'); // ลบ token
+                    window.location.href = 'login.html'; // Redirect ไปหน้า login
+                } else {
+                    alert('การออกจากระบบล้มเหลว');
+                }
+            } catch (error) {
+                alert('เกิดข้อผิดพลาดในการออกจากระบบ');
+                console.error(error);
+            }
+        }
+
+        window.onload = fetchWaterQuality;
+    </script>
+</body>
+</html>

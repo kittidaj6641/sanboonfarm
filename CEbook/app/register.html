@@ -1,0 +1,105 @@
+<!-- register.html -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สมัครสมาชิก</title>
+    <style>
+
+body {
+            background-image: url('background/1574333475_88148_Cover_6June28.jpg'); /* ตรวจสอบ path นี้ */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.489);
+            
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+    <div class="container">
+        <h2>สมัครสมาชิก</h2>
+        <form id="registerForm">
+            <div class="form-group">
+                <label>ชื่อ:</label>
+                <input type="text" id="name" required>
+            </div>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="form-group">
+                <label>รหัสผ่าน:</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit">สมัครสมาชิก</button>
+        </form>
+        <p id="registerMessage"></p>
+        <p>มีบัญชีแล้ว? <a href="login.html">เข้าสู่ระบบ</a></p>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageElement = document.getElementById('registerMessage');
+
+            try {
+                const response = await fetch('http://localhost:8080/member/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.status === 201) {
+                    messageElement.style.color = 'green';
+                    messageElement.textContent = 'สมัครสมาชิกสำเร็จ';
+                    setTimeout(() => window.location.href = 'login.html', 1000);
+                } else {
+                    messageElement.style.color = 'red';
+                    messageElement.textContent = data.msg || 'เกิดข้อผิดพลาดในการสมัคร';
+                }
+            } catch (error) {
+                messageElement.style.color = 'red';
+                messageElement.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>

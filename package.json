@@ -1,0 +1,9 @@
+{
+  "name": "sanboonfarm",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "cd CEbook/server && npm install && npm start",
+    "frontend:build": "cd login-react && npm install && npm run build",
+    "frontend:copy": "xcopy login-react\\build CEbook\\server\\public /E /Y /I"
+  }
+}
