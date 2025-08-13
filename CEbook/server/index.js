@@ -14,7 +14,7 @@ app.use(express.json())
 app.use("/member", memberRoutes)
 app.use("/register", registerRoutes)
 
-app.get("/", (req, res) => {
+app.get("/api", (req, res) => {
   res.json({ message: "hello KSU YES I CAN" })
 })
 
