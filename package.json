@@ -5,5 +5,14 @@
     "start": "cd CEbook/server && npm install && npm start",
     "frontend:build": "cd login-react && npm install && npm run build",
     "frontend:copy": "xcopy login-react\\build CEbook\\server\\public /E /Y /I"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^17.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "cross-env": "^10.0.0"
   }
 }
