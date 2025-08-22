@@ -6,16 +6,13 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const envFile = process.env.NODE_ENV === "production" ? ".env.remote" : ".env.local";
-dotenv.config({ path: path.join(__dirname, envFile) });
+const envFile = process.env.NODE_ENV === "production" ? ".env.remote" :  ".env";
+dotenv.config({ path: path.join(__dirname, "..", envFile) });
 
 const { Pool } = pkg;
 
 const dbConfig = {
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false, // จำเป็นสำหรับ Railway
-  },
 };
 
 // ตรวจสอบค่า
