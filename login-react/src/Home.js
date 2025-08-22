@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BarChart, Info, Phone, LogOut, Search, Fish, AlertTriangle, Clock, Shrimp } from 'lucide-react'; // ลบ X ออก
+import config from './config';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import './Home.css';
 
@@ -24,7 +25,7 @@ const Home = () => {
 
         const fetchWaterQuality = async () => {
             try {
-                const response = await axios.get('http://localhost:8080/member/water-quality', {
+                const response = await axios.get(`${config.API_BASE_URL}/member/water-quality`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 console.log('API Response:', response.data);
@@ -50,7 +51,7 @@ const Home = () => {
     const handleLogout = async () => {
         const token = localStorage.getItem('token');
         try {
-            const response = await axios.post('http://localhost:8080/member/logout', {}, {
+            const response = await axios.post(`${config.API_BASE_URL}/member/logout`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.status === 200) {
@@ -153,7 +154,7 @@ const Home = () => {
         }
 
         try {
-            const response = await axios.get('http://localhost:8080/member/login-logs', {
+            const response = await axios.get(`${config.API_BASE_URL}/member/login-logs`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             console.log('Login Logs Response:', response.data);

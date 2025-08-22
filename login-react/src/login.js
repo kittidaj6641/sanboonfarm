@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import config from './config';
 import './login.css';
 
 const Login = () => {
@@ -36,7 +37,7 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:8080/member/login', {
+            const response = await axios.post(`${config.API_BASE_URL}/member/login`, {
                 email,
                 password
             });

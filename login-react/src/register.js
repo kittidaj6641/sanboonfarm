@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import config from './config';
 import './register.css';
 
 const Register = () => {
@@ -39,7 +40,7 @@ const Register = () => {
         setMessage('');
 
         try {
-            const response = await axios.post('http://localhost:8080/register/register', {
+            const response = await axios.post(`${config.API_BASE_URL}/register/register`, {
                 name,
                 email,
                 password

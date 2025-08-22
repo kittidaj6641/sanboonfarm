@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import config from './config';
 import './water-quality.css';
 import { FaWater, FaFlask, FaWind, FaAtom, FaCloud, FaFish, FaThermometerHalf } from 'react-icons/fa';
 
@@ -26,7 +27,7 @@ const WaterQuality = () => {
             }
         
             try {
-                const response = await axios.get('http://localhost:8080/member/water-quality', {
+                const response = await axios.get(`${config.API_BASE_URL}/member/water-quality`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setWaterData(response.data);
@@ -58,7 +59,7 @@ const WaterQuality = () => {
     const handleLogout = async () => {
         const token = localStorage.getItem('token');
         try {
-            const response = await axios.post('http://localhost:8080/member/logout', {}, {
+            const response = await axios.post(`${config.API_BASE_URL}/member/logout`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.status === 200) {
