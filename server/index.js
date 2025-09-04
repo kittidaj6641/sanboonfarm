@@ -4,13 +4,8 @@ import registerRoutes from "./routes/register.js"
 import cors from "cors"
 import path from "path"
 import { fileURLToPath } from "url"
-import { Pool } from "pg";
 
 
-
-const pool = new Pool({
-  connectionString: "postgresql://postgres:ZcwNndUCiShSkCqcUKYhIhZsKyhoDUZd@postgres.railway.internal:5432/railway",
-});
 const app = express()
 const port = process.env.PORT || 8080
 
