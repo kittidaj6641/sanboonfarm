@@ -100,11 +100,20 @@ router.get("/water-quality", verifyToken, async (req, res) => {
 // รับข้อมูลจากเซ็นเซอร์และบันทึกใน water_quality
 router.post('/water-quality-sensor', async (req, res) => {
   const { dissolved_oxygen, ph, temperature, turbidity } = req.body;
-
-  if (!dissolved_oxygen || !ph || !temperature || !turbidity) {
+  
+  // ตรวจสอบว่า field มีอยู่หรือไม่ (แทนที่จะตรวจสอบ falsy)
+  if (dissolved_oxygen === undefined || dissolved_oxygen === null ||
+      ph === undefined || ph === null ||
+      temperature === undefined || temperature === null ||
+      turbidity === undefined || turbidity === null) {
     return res.status(400).json({ msg: "Missing dissolved_oxygen, ph, temperature, or turbidity value" });
   }
-
+  
+  // เพิ่มการตรวจสอบว่าเป็นตัวเลขหรือไม่
+  if (isNaN(dissolved_oxygen) || isNaN(ph) || isNaN(temperature) || isNaN(turbidity)) {
+    return res.status(400).json({ msg: "All values must be valid numbers" });
+  }
+  
   try {
     const result = await pool.query(
       "INSERT INTO water_quality (dissolved_oxygen, ph, temperature, turbidity) VALUES ($1, $2, $3, $4) RETURNING *",
@@ -116,6 +125,5 @@ router.post('/water-quality-sensor', async (req, res) => {
     console.error('Water quality sensor error at', new Date().toISOString(), ':', err);
     res.status(500).json({ error: "Server Error " + err.message });
   }
-});
 
 export default router;
