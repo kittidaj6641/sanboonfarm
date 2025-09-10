@@ -97,33 +97,65 @@ router.get("/water-quality", verifyToken, async (req, res) => {
     }
 });
 
-// รับข้อมูลจากเซ็นเซอร์และบันทึกใน water_quality
 router.post('/water-quality-sensor', async (req, res) => {
+  // Ensure the request body is parsed as JSON
   const { dissolved_oxygen, ph, temperature, turbidity } = req.body;
-  
-  // ตรวจสอบว่า field มีอยู่หรือไม่ (แทนที่จะตรวจสอบ falsy)
+
+  // Log the received payload for debugging
+  console.log('Received payload:', req.body);
+
+  // Check for missing fields (undefined or null)
   if (dissolved_oxygen === undefined || dissolved_oxygen === null ||
       ph === undefined || ph === null ||
       temperature === undefined || temperature === null ||
       turbidity === undefined || turbidity === null) {
-    return res.status(400).json({ msg: "Missing dissolved_oxygen, ph, temperature, or turbidity value" });
+    console.error('Missing required fields:', { dissolved_oxygen, ph, temperature, turbidity });
+    return res.status(400).json({ 
+      msg: "Missing required fields",
+      details: "Ensure dissolved_oxygen, ph, temperature, and turbidity are provided"
+    });
   }
-  
-  // เพิ่มการตรวจสอบว่าเป็นตัวเลขหรือไม่
+
+  // Validate that all fields are valid numbers
   if (isNaN(dissolved_oxygen) || isNaN(ph) || isNaN(temperature) || isNaN(turbidity)) {
-    return res.status(400).json({ msg: "All values must be valid numbers" });
+    console.error('Invalid number detected:', { dissolved_oxygen, ph, temperature, turbidity });
+    return res.status(400).json({ 
+      msg: "Invalid data",
+      details: "All values must be valid numbers"
+    });
   }
-  
+
+  // Optional: Add range validation based on sensor specifications
+  if (dissolved_oxygen < 0 || dissolved_oxygen > 20) { // Example range for DO (mg/L)
+    console.warn('Dissolved oxygen out of range:', dissolved_oxygen);
+  }
+  if (ph < 0 || ph > 14) { // pH range
+    console.warn('pH out of range:', ph);
+  }
+  if (temperature < -10 || temperature > 50) { // Example temperature range (°C)
+    console.warn('Temperature out of range:', temperature);
+  }
+  if (turbidity < 0 || turbidity > 1000) { // Example turbidity range (NTU)
+    console.warn('Turbidity out of range:', turbidity);
+  }
+
   try {
     const result = await pool.query(
       "INSERT INTO water_quality (dissolved_oxygen, ph, temperature, turbidity) VALUES ($1, $2, $3, $4) RETURNING *",
       [dissolved_oxygen, ph, temperature, turbidity]
     );
     console.log('Water quality data saved at', new Date().toISOString(), ':', result.rows[0]);
-    res.status(201).json({ msg: "Data saved successfully", data: result.rows[0] });
+    return res.status(201).json({ 
+      msg: "Data saved successfully", 
+      data: result.rows[0] 
+    });
   } catch (err) {
-    console.error('Water quality sensor error at', new Date().toISOString(), ':', err);
-    res.status(500).json({ error: "Server Error " + err.message });
+    console.error('Water quality sensor error at', new Date().toISOString(), ':', err.message);
+    return res.status(500).json({ 
+      msg: "Server error",
+      details: err.message 
+    });
   }
+});
 
 export default router;
