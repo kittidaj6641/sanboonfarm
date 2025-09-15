@@ -1,120 +1,137 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import config from './config';
-import './register.css';
+import React, { useState } from "react";
+import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import config from "./config";
+import "./register.css"; // มีสไตล์เหมือนหน้า Login (ดูด้านล่าง)
+
+const HERO_URL = "/background/1574333475_88148_Cover_6June28.jpg";
 
 const Register = () => {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [message, setMessage] = useState('');
-    const navigate = useNavigate();
+  // === LOGIC เดิมคงไว้ ===
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        document.body.style.backgroundImage = "url('/background/1574333475_88148_Cover_6June28.jpg')";
-        document.body.style.backgroundSize = 'cover';
-        document.body.style.backgroundPosition = 'center';
-        document.body.style.backgroundRepeat = 'no-repeat';
-        document.body.style.minHeight = '100vh';
-        document.body.style.margin = '0';
-        document.body.style.fontFamily = 'Arial, sans-serif';
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage("");
+    try {
+      const response = await axios.post(
+        `${config.API_BASE_URL}/register/register`,
+        { name, email, password }
+      );
+      if (response.status === 201) {
+        setMessage("สมัครสมาชิกสำเร็จ");
+        setTimeout(() => navigate("/login"), 1000);
+      }
+    } catch (error) {
+      if (error.response) {
+        const status = error.response.status;
+        const errorMsg = error.response.data?.msg || "เกิดข้อผิดพลาดในการสมัคร";
+        if (status === 409) setMessage("อีเมล์นี้ถูกใช้ไปแล้ว");
+        else setMessage(errorMsg);
+      } else if (error.request) {
+        setMessage(
+          "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่อ"
+        );
+      } else {
+        setMessage("เกิดข้อผิดพลาดในการสมัคร: " + error.message);
+      }
+      console.error("Error during registration:", error);
+    }
+  };
 
-        return () => {
-            document.body.style.backgroundImage = '';
-            document.body.style.backgroundSize = '';
-            document.body.style.backgroundPosition = '';
-            document.body.style.backgroundRepeat = '';
-            document.body.style.minHeight = '';
-            document.body.style.margin = '';
-            document.body.style.fontFamily = '';
-            document.body.style.display = '';
-            document.body.style.justifyContent = '';
-            document.body.style.alignItems = '';
-        };
-    }, []);
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 24 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -24 }}
+      transition={{ duration: 0.35 }}
+      className="auth-wrapper">
+      {/* Left: Branding + Card */}
+      <section className="auth-left">
+        <div className="brand">
+          <h1 className="brand-title">
+            ฟาร์มกุ้งก้ามกราม
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/2619/2619560.png"
+              alt="shrimp icon"
+              className="brand-icon"
+            />
+          </h1>
+        </div>
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setMessage('');
+        <div className="form-card" role="region" aria-label="สมัครสมาชิก">
+          <h3 className="form-title">ฟาร์มกุ้งก้ามกราม</h3>
 
-        try {
-            const response = await axios.post(`${config.API_BASE_URL}/register/register`, {
-                name,
-                email,
-                password
-            });
+          <form onSubmit={handleSubmit} className="form-grid">
+            <label className="form-label">
+              ชื่อ
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                autoComplete="name"
+              />
+            </label>
 
-            if (response.status === 201) {
-                setMessage('สมัครสมาชิกสำเร็จ');
-                setTimeout(() => navigate('/login'), 1000);
-            }
-        } catch (error) {
-            if (error.response) {
-                const status = error.response.status;
-                const errorMsg = error.response.data?.msg || 'เกิดข้อผิดพลาดในการสมัคร';
+            <label className="form-label">
+              อีเมล์
+              <input
+                type="email"
+                className="form-input"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
+            </label>
 
-                if (status === 409) {
-                    setMessage('อีเมล์นี้ถูกใช้ไปแล้ว');
-                } else if (status === 400) {
-                    setMessage(errorMsg); // แสดงข้อความจากเซิร์ฟเวอร์ เช่น "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร"
-                } else {
-                    setMessage(errorMsg);
-                }
-            } else if (error.request) {
-                setMessage('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่อ');
-            } else {
-                setMessage('เกิดข้อผิดพลาดในการสมัคร: ' + error.message);
-            }
-            console.error('Error during registration:', error);
-        }
-    };
+            <label className="form-label">
+              รหัสผ่าน
+              <input
+                type="password"
+                className="form-input"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+              />
+            </label>
 
-    return (
-        <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ duration: 0.5 }}
-            className="containers"
-        >
-            <h1>ฟาร์มกุ้งก้ามกราม</h1>
-            <h2>สมัครสมาชิก</h2>
-            <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <label>ชื่อ:</label>
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
-                    />
-                </div>
-                <div className="form-group">
-                    <label>Email:</label>
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
-                </div>
-                <div className="form-group">
-                    <label>รหัสผ่าน:</label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                </div>
-                <button type="submit">สมัครสมาชิก</button>
-            </form>
-            <p style={{ color: message.includes('สำเร็จ') ? 'green' : 'red' }}>{message}</p>
-            <p>มีบัญชีแล้ว? <a href="/login">เข้าสู่ระบบ</a></p>
-        </motion.div>
-    );
+            <button type="submit" className="btn-primary">
+              สมัครสมาชิก
+            </button>
+          </form>
+
+          {message && (
+            <p className={`msg ${message.includes("สำเร็จ") ? "ok" : "err"}`}>
+              {message}
+            </p>
+          )}
+
+          <p className="alt-link">
+            มีบัญชีแล้ว? <Link to="/login">เข้าสู่ระบบ</Link>
+          </p>
+        </div>
+      </section>
+
+      {/* Right: Hero image */}
+      <aside
+        className="auth-hero"
+        aria-hidden="true"
+        style={{ backgroundImage: `url('${HERO_URL}')` }}
+      />
+    </motion.div>
+  );
 };
 
 export default Register;
