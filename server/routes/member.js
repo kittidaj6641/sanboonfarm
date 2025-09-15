@@ -99,11 +99,46 @@ router.get("/water-quality", verifyToken, async (req, res) => {
 
 router.post('/water-quality-sensor', async (req, res) => {
   const { dissolved_oxygen, ph, temperature, turbidity } = req.body;
-
-  if (!dissolved_oxygen || !ph || !temperature || !turbidity) {
-    return res.status(400).json({ msg: "Missing dissolved_oxygen, ph, temperature, or turbidity value" });
+  
+  // Helper function to check if value is a valid number (including 0)
+  const isValidNumber = (value) => {
+    return typeof value === 'number' && !isNaN(value) && isFinite(value);
+  };
+  
+  // ตรวจสอบความถูกต้องของแต่ละค่า
+  if (!isValidNumber(dissolved_oxygen)) {
+    return res.status(400).json({ msg: "Missing or invalid dissolved_oxygen value" });
   }
-
+  
+  if (!isValidNumber(ph)) {
+    return res.status(400).json({ msg: "Missing or invalid ph value" });
+  }
+  
+  if (!isValidNumber(temperature)) {
+    return res.status(400).json({ msg: "Missing or invalid temperature value" });
+  }
+  
+  if (!isValidNumber(turbidity)) {
+    return res.status(400).json({ msg: "Missing or invalid turbidity value" });
+  }
+  
+  // ตรวจสอบช่วงค่าที่สมเหตุสมผล (optional)
+  if (dissolved_oxygen < 0 || dissolved_oxygen > 50) {
+    return res.status(400).json({ msg: "dissolved_oxygen must be between 0 and 50 mg/L" });
+  }
+  
+  if (ph < 0 || ph > 14) {
+    return res.status(400).json({ msg: "pH must be between 0 and 14" });
+  }
+  
+  if (temperature < -50 || temperature > 100) {
+    return res.status(400).json({ msg: "temperature must be between -50 and 100°C" });
+  }
+  
+  if (turbidity < 0 || turbidity > 10000) {
+    return res.status(400).json({ msg: "turbidity must be between 0 and 10000 NTU" });
+  }
+  
   try {
     const result = await pool.query(
       "INSERT INTO water_quality (dissolved_oxygen, ph, temperature, turbidity) VALUES ($1, $2, $3, $4) RETURNING *",
@@ -116,6 +151,3 @@ router.post('/water-quality-sensor', async (req, res) => {
     res.status(500).json({ error: "Server Error " + err.message });
   }
 });
-
-
-export default router;
