@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import config from "./config";
 import "./login.css";
 
-const HERO_URL = "/background/1574333475_88148_Cover_6June28.jpg"; // ภาพฝั่งขวา
+const HERO_URL = "/background/19.jpg"; // ภาพฝั่งขวา
 
 const Login = () => {
   const [email, setEmail] = useState("");
