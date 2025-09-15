@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import config from "./config";
 import "./register.css"; // มีสไตล์เหมือนหน้า Login (ดูด้านล่าง)
 
-const HERO_URL = "/background/1574333475_88148_Cover_6June28.jpg";
+const HERO_URL = "/background/19.jpg";
 
 const Register = () => {
   // === LOGIC เดิมคงไว้ ===
@@ -55,7 +55,7 @@ const Register = () => {
       <section className="auth-left">
         <div className="brand">
           <h1 className="brand-title">
-            ฟาร์มกุ้งก้ามกราม
+            SANBOON FARM
             <img
               src="https://cdn-icons-png.flaticon.com/512/2619/2619560.png"
               alt="shrimp icon"
@@ -65,7 +65,7 @@ const Register = () => {
         </div>
 
         <div className="form-card" role="region" aria-label="สมัครสมาชิก">
-          <h3 className="form-title">ฟาร์มกุ้งก้ามกราม</h3>
+          <h3 className="form-title">สมัครสมาชิก</h3>
 
           <form onSubmit={handleSubmit} className="form-grid">
             <label className="form-label">
