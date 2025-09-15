@@ -44,7 +44,7 @@ const Login = () => {
           {/* logo เล็ก ๆ (ใส่ไฟล์โลโก้ได้ตามต้องการ) */}
           {/* <img src="/logo-shrimp.svg" alt="logo" className="brand-logo" /> */}
           <h1 className="brand-title">
-            ฟาร์มกุ้งก้ามกราม
+            SANBOON FARM
             <img
               src="https://cdn-icons-png.flaticon.com/512/2619/2619560.png"
               alt="shrimp icon"
@@ -83,7 +83,7 @@ const Login = () => {
             </label>
 
             <Link to="/forgot-password" className="forgot-password-link">
-              ลืมรหัสผ่าน?
+              
             </Link>
 
             <button type="submit" className="btn-primary">
