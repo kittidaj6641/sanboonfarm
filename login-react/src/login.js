@@ -44,7 +44,7 @@ const Login = () => {
           {/* logo เล็ก ๆ (ใส่ไฟล์โลโก้ได้ตามต้องการ) */}
           {/* <img src="/logo-shrimp.svg" alt="logo" className="brand-logo" /> */}
           <h1 className="brand-title">
-            SANBOON FARM
+              SANBOON FARM
             <img
               src="https://cdn-icons-png.flaticon.com/512/2619/2619560.png"
               alt="shrimp icon"
