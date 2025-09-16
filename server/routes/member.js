@@ -98,7 +98,7 @@ router.get("/water-quality", verifyToken, async (req, res) => {
 });
 
 router.post('/water-quality-sensor', async (req, res) => {
-  const { dissolved_oxygen, ph, temperature, turbidity } = req.body;
+  const { dissolved_oxygen, temperature, bod } = req.body;
   
   // Helper function to check if value is a valid number (including 0)
   const isValidNumber = (value) => {
@@ -110,45 +110,36 @@ router.post('/water-quality-sensor', async (req, res) => {
     return res.status(400).json({ msg: "Missing or invalid dissolved_oxygen value" });
   }
   
-  if (!isValidNumber(ph)) {
-    return res.status(400).json({ msg: "Missing or invalid ph value" });
-  }
-  
   if (!isValidNumber(temperature)) {
     return res.status(400).json({ msg: "Missing or invalid temperature value" });
   }
   
-  if (!isValidNumber(turbidity)) {
-    return res.status(400).json({ msg: "Missing or invalid turbidity value" });
+  if (!isValidNumber(bod)) {
+    return res.status(400).json({ msg: "Missing or invalid bod value" });
   }
   
-  // ตรวจสอบช่วงค่าที่สมเหตุสมผล (optional)
+  // ตรวจสอบช่วงค่าที่สมเหตุสมผล
   if (dissolved_oxygen < 0 || dissolved_oxygen > 50) {
     return res.status(400).json({ msg: "dissolved_oxygen must be between 0 and 50 mg/L" });
-  }
-  
-  if (ph < 0 || ph > 14) {
-    return res.status(400).json({ msg: "pH must be between 0 and 14" });
   }
   
   if (temperature < -50 || temperature > 100) {
     return res.status(400).json({ msg: "temperature must be between -50 and 100°C" });
   }
   
-  if (turbidity < 0 || turbidity > 10000) {
-    return res.status(400).json({ msg: "turbidity must be between 0 and 10000 NTU" });
+  if (bod < 0 || bod > 10000) {
+    return res.status(400).json({ msg: "bod must be between 0 and 10000 mg/L" });
   }
   
   try {
     const result = await pool.query(
-      "INSERT INTO water_quality (dissolved_oxygen, ph, temperature, turbidity) VALUES ($1, $2, $3, $4) RETURNING *",
-      [dissolved_oxygen, ph, temperature, turbidity]
+      "INSERT INTO water_quality (dissolved_oxygen, temperature, bod, timestamp) VALUES ($1, $2, $3, NOW()) RETURNING *",
+      [dissolved_oxygen, temperature, bod]
     );
     console.log('Water quality data saved at', new Date().toISOString(), ':', result.rows[0]);
     res.status(201).json({ msg: "Data saved successfully", data: result.rows[0] });
   } catch (err) {
     console.error('Water quality sensor error at', new Date().toISOString(), ':', err);
-    res.status(500).json({ error: "Server Error " + err.message });
+    res.status(500).json({ error: "Server Error: " + err.message });
   }
 });
-
