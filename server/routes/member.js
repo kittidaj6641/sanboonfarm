@@ -100,6 +100,8 @@ router.get("/water-quality", verifyToken, async (req, res) => {
 router.post('/water-quality-sensor', async (req, res) => {
   const { dissolved_oxygen, temperature, bod } = req.body;
   
+  console.log('Received payload:', req.body); // Log payload สำหรับ debug
+  
   // Helper function to check if value is a valid number (including 0)
   const isValidNumber = (value) => {
     return typeof value === 'number' && !isNaN(value) && isFinite(value);
@@ -118,7 +120,7 @@ router.post('/water-quality-sensor', async (req, res) => {
     return res.status(400).json({ msg: "Missing or invalid bod value" });
   }
   
-  // ตรวจสอบช่วงค่าที่สมเหตุสมผล
+  // ตรวจสอบช่วงค่าที่สมเหตุสมผล (ยอมรับ dissolved_oxygen = 0)
   if (dissolved_oxygen < 0 || dissolved_oxygen > 50) {
     return res.status(400).json({ msg: "dissolved_oxygen must be between 0 and 50 mg/L" });
   }
@@ -140,6 +142,6 @@ router.post('/water-quality-sensor', async (req, res) => {
     res.status(201).json({ msg: "Data saved successfully", data: result.rows[0] });
   } catch (err) {
     console.error('Water quality sensor error at', new Date().toISOString(), ':', err);
-    res.status(500).json({ error: "Server Error: " + err.message });
+    res.status(500).json({ error: "Server Error " + err.message });
   }
 });
