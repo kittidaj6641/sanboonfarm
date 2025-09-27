@@ -30,34 +30,29 @@ const WaterQuality = () => {
       }
 
       try {
-        const resp = await axios.get(`${config.API_BASE_URL}/member/water-quality`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await axios.get(`${config.API_BASE_URL}/member/water-quality`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
-
-        // รองรับทั้งรูปแบบที่ API ส่งเป็น array ตรง ๆ หรือห่อใน data
-        const payload = Array.isArray(resp.data) ? resp.data : (resp.data?.data || []);
-
-        // ใช้เฉพาะคอลัมน์ที่มีจริงในตาราง
-        const rows = (payload || []).map((r) => ({
+        // ใช้ข้อมูลตามจริงจากตารางเท่านั้น
+        const rows = (response.data || []).map(r => ({
           id: r.id,
           dissolved_oxygen: r.dissolved_oxygen,
           ph: r.ph,
           temperature: r.temperature,
-          turbidity: r.turbidity, // ใช้เป็น BOD (mg/L)
-          recorded_at: r.recorded_at,
+          turbidity: r.turbidity,          // ใช้เป็น BOD (mg/L)
+          recorded_at: r.recorded_at
         }));
-
         setWaterData(rows);
         setError('');
-      } catch (err) {
-        if (err.response?.status === 403) {
+      } catch (error) {
+        if (error.response?.status === 403) {
           setError('โทเค็นไม่ถูกต้องหรือหมดอายุ กรุณาเข้าสู่ระบบใหม่');
           localStorage.removeItem('token');
           setTimeout(() => navigate('/login'), 1000);
         } else {
-          setError(err.response?.data?.msg || 'ไม่สามารถดึงข้อมูลได้');
+          setError(error.response?.data?.msg || 'ไม่สามารถดึงข้อมูลได้');
         }
-        console.error(err);
+        console.error(error);
       }
     };
 
@@ -76,20 +71,18 @@ const WaterQuality = () => {
   const handleLogout = async () => {
     const token = localStorage.getItem('token');
     try {
-      const response = await axios.post(
-        `${config.API_BASE_URL}/member/logout`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axios.post(`${config.API_BASE_URL}/member/logout`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (response.status === 200) {
         localStorage.removeItem('token');
         navigate('/login');
       } else {
         alert('การออกจากระบบล้มเหลว');
       }
-    } catch (err) {
+    } catch (error) {
       alert('เกิดข้อผิดพลาดในการออกจากระบบ');
-      console.error(err);
+      console.error(error);
     }
   };
 
@@ -99,12 +92,9 @@ const WaterQuality = () => {
       if (column === 'recorded_at') {
         value = row.recorded_at ? new Date(row.recorded_at).toLocaleString('th-TH') : 'N/A';
       } else if (column === 'temperature') {
-        value =
-          row.temperature === -127.0
-            ? 'ไม่สามารถวัดได้'
-            : isNum(row.temperature)
-            ? row.temperature
-            : 'N/A';
+        value = row.temperature === -127.00
+          ? 'ไม่สามารถวัดได้'
+          : (isNum(row.temperature) ? row.temperature : 'N/A');
       } else {
         value = isNum(row[column]) ? row[column] : 'N/A';
       }
@@ -125,11 +115,11 @@ const WaterQuality = () => {
 
   // ปุ่มเฉพาะคอลัมน์ที่มีอยู่จริงในตาราง
   const buttons = [
-    { key: 'ph',               label: 'pH',               icon: <FaFlask /> },
-    { key: 'dissolved_oxygen', label: 'ออกซิเจน (mg/L)',  icon: <FaWind /> },
-    { key: 'turbidity',        label: 'BOD (mg/L)',       icon: <FaFish /> },
-    { key: 'temperature',      label: 'อุณหภูมิ (°C)',    icon: <FaThermometerHalf /> },
-    { key: 'recorded_at',      label: 'วันที่และเวลา',    icon: <FaThermometerHalf /> },
+    { key: 'ph',                label: 'pH',                icon: <FaFlask /> },
+    { key: 'dissolved_oxygen',  label: 'ออกซิเจน (mg/L)',   icon: <FaWind /> },
+    { key: 'turbidity',         label: 'BOD (mg/L)',        icon: <FaFish /> },
+    { key: 'temperature',       label: 'อุณหภูมิ (°C)',     icon: <FaThermometerHalf /> },
+    { key: 'recorded_at',       label: 'วันที่และเวลา',     icon: <FaThermometerHalf /> }, // ใช้ไอคอนซ้ำได้
   ];
 
   // ตรวจคุณภาพจากคอลัมน์ที่มีจริง
@@ -151,7 +141,7 @@ const WaterQuality = () => {
       issues.push(`BOD (${data.turbidity} mg/L) สูงกว่าเกณฑ์ 20 mg/L`);
     }
 
-    const temperature = data.temperature === -127.0 ? null : data.temperature;
+    const temperature = data.temperature === -127.00 ? null : data.temperature;
     if (isNum(temperature) && (temperature < 26 || temperature > 32)) {
       issues.push(`อุณหภูมิ (${temperature} °C) อยู่นอกเกณฑ์ 26 - 32°C`);
     } else if (temperature === null) {
@@ -160,7 +150,7 @@ const WaterQuality = () => {
 
     return {
       isSuitable: issues.length === 0,
-      issues: issues.length > 0 ? issues : ['เหมาะสมสำหรับการเลี้ยงกุ้ง'],
+      issues: issues.length > 0 ? issues : ['เหมาะสมสำหรับการเลี้ยงกุ้ง']
     };
   };
 
@@ -185,14 +175,12 @@ const WaterQuality = () => {
             <div className="dashboard-content">
               <div className="dashboard-item">
                 <span className="dashboard-label">pH:</span>
-                <span className="dashboard-value">
-                  {isNum(latestData.ph) ? latestData.ph : 'N/A'}
-                </span>
+                <span className="dashboard-value">{isNum(latestData.ph) ? latestData.ph : 'N/A'}</span>
               </div>
 
               <div className="dashboard-item">
                 <span className="dashboard-label">ออกซิเจน (mg/L):</span>
-                <span className="dashboard-value}>
+                <span className="dashboard-value">
                   {isNum(latestData.dissolved_oxygen) ? latestData.dissolved_oxygen : 'N/A'}
                 </span>
               </div>
@@ -207,20 +195,16 @@ const WaterQuality = () => {
               <div className="dashboard-item">
                 <span className="dashboard-label">อุณหภูมิ (°C):</span>
                 <span className="dashboard-value">
-                  {latestData.temperature === -127.0
+                  {latestData.temperature === -127.00
                     ? 'ไม่สามารถวัดได้'
-                    : isNum(latestData.temperature)
-                    ? latestData.temperature
-                    : 'N/A'}
+                    : (isNum(latestData.temperature) ? latestData.temperature : 'N/A')}
                 </span>
               </div>
 
               <div className="dashboard-item">
                 <span className="dashboard-label">วันที่และเวลา:</span>
                 <span className="dashboard-value">
-                  {latestData.recorded_at
-                    ? new Date(latestData.recorded_at).toLocaleString('th-TH')
-                    : 'N/A'}
+                  {latestData.recorded_at ? new Date(latestData.recorded_at).toLocaleString('th-TH') : 'N/A'}
                 </span>
               </div>
             </div>
