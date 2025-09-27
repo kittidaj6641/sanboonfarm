@@ -30,12 +30,15 @@ const WaterQuality = () => {
       }
 
       try {
-        const response = await axios.get(`${config.API_BASE_URL}/member/water-quality`, {
+        const resp = await axios.get(`${config.API_BASE_URL}/member/water-quality`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // ใช้ข้อมูลตามจริงจากตารางเท่านั้น
-        const rows = (response.data || []).map((r) => ({
+        // รองรับทั้งรูปแบบที่ API ส่งเป็น array ตรง ๆ หรือห่อใน data
+        const payload = Array.isArray(resp.data) ? resp.data : (resp.data?.data || []);
+
+        // ใช้เฉพาะคอลัมน์ที่มีจริงในตาราง
+        const rows = (payload || []).map((r) => ({
           id: r.id,
           dissolved_oxygen: r.dissolved_oxygen,
           ph: r.ph,
@@ -46,15 +49,15 @@ const WaterQuality = () => {
 
         setWaterData(rows);
         setError('');
-      } catch (error) {
-        if (error.response?.status === 403) {
+      } catch (err) {
+        if (err.response?.status === 403) {
           setError('โทเค็นไม่ถูกต้องหรือหมดอายุ กรุณาเข้าสู่ระบบใหม่');
           localStorage.removeItem('token');
           setTimeout(() => navigate('/login'), 1000);
         } else {
-          setError(error.response?.data?.msg || 'ไม่สามารถดึงข้อมูลได้');
+          setError(err.response?.data?.msg || 'ไม่สามารถดึงข้อมูลได้');
         }
-        console.error(error);
+        console.error(err);
       }
     };
 
@@ -84,9 +87,9 @@ const WaterQuality = () => {
       } else {
         alert('การออกจากระบบล้มเหลว');
       }
-    } catch (error) {
+    } catch (err) {
       alert('เกิดข้อผิดพลาดในการออกจากระบบ');
-      console.error(error);
+      console.error(err);
     }
   };
 
@@ -122,11 +125,11 @@ const WaterQuality = () => {
 
   // ปุ่มเฉพาะคอลัมน์ที่มีอยู่จริงในตาราง
   const buttons = [
-    { key: 'ph', label: 'pH', icon: <FaFlask /> },
-    { key: 'dissolved_oxygen', label: 'ออกซิเจน (mg/L)', icon: <FaWind /> },
-    { key: 'turbidity', label: 'BOD (mg/L)', icon: <FaFish /> },
-    { key: 'temperature', label: 'อุณหภูมิ (°C)', icon: <FaThermometerHalf /> },
-    { key: 'recorded_at', label: 'วันที่และเวลา', icon: <FaThermometerHalf /> }, // ใช้ไอคอนซ้ำได้
+    { key: 'ph',               label: 'pH',               icon: <FaFlask /> },
+    { key: 'dissolved_oxygen', label: 'ออกซิเจน (mg/L)',  icon: <FaWind /> },
+    { key: 'turbidity',        label: 'BOD (mg/L)',       icon: <FaFish /> },
+    { key: 'temperature',      label: 'อุณหภูมิ (°C)',    icon: <FaThermometerHalf /> },
+    { key: 'recorded_at',      label: 'วันที่และเวลา',    icon: <FaThermometerHalf /> },
   ];
 
   // ตรวจคุณภาพจากคอลัมน์ที่มีจริง
@@ -189,7 +192,7 @@ const WaterQuality = () => {
 
               <div className="dashboard-item">
                 <span className="dashboard-label">ออกซิเจน (mg/L):</span>
-                <span className="dashboard-value">
+                <span className="dashboard-value}>
                   {isNum(latestData.dissolved_oxygen) ? latestData.dissolved_oxygen : 'N/A'}
                 </span>
               </div>
@@ -291,9 +294,7 @@ const WaterQuality = () => {
         <button className="status-btn" onClick={() => navigate('/status')}>
           ค่าสถานะ
         </button>
-        <button id="logoutBtn" onClick={handleLogout}>
-          ออกจากระบบ
-        </button>
+        <button id="logoutBtn" onClick={handleLogout}>ออกจากระบบ</button>
       </div>
     </motion.div>
   );
