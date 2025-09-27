@@ -180,7 +180,7 @@ const WaterQuality = () => {
                             </div>
                             <div className="dashboard-item">
                                 <span className="dashboard-label">BOD (mg/L):</span>
-                                <span className="dashboard-value">{latestData.bod || 'N/A'}</span>
+                                <span className="dashboard-value">{latestData.terbidity || 'N/A'}</span>
                             </div>
                             <div className="dashboard-item">
                                 <span className="dashboard-label">อุณหภูมิ (°C):</span>
