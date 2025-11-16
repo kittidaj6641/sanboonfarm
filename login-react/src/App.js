@@ -7,6 +7,7 @@ import WaterQuality from './water-quality';
 import Home from './Home';
 import ShrimpInfo from './ShrimpInfo';
 import Status from './Status';
+import Realtime from './Realtime';
 
 
 const AnimatedRoutes = () => {
@@ -19,6 +20,7 @@ const AnimatedRoutes = () => {
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/Realtime" element={<Realtime />} />
                 <Route path="/water-quality" element={<WaterQuality />} />
                 <Route path="/shrimp-info" element={<ShrimpInfo />} />
                 <Route path="/status" element={<Status />} /> 
