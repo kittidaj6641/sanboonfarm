@@ -2,8 +2,12 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BarChart, Info, Phone, LogOut, Search, Fish, AlertTriangle, Clock, Shrimp } from 'lucide-react'; // ลบ X ออก
-import config from './config';
+
+// 🚀 1. เพิ่ม icon 'Activity' สำหรับปุ่ม Realtime
+import { 
+    BarChart, Info, Phone, LogOut, Search, Fish, AlertTriangle, Clock, Shrimp, Activity 
+} from 'lucide-react'; 
+
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import './Home.css';
 
@@ -25,7 +29,7 @@ const Home = () => {
 
         const fetchWaterQuality = async () => {
             try {
-                const response = await axios.get(`${config.API_BASE_URL}/member/water-quality`, {
+                const response = await axios.get('http://localhost:8080/member/water-quality', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 console.log('API Response:', response.data);
@@ -51,7 +55,7 @@ const Home = () => {
     const handleLogout = async () => {
         const token = localStorage.getItem('token');
         try {
-            const response = await axios.post(`${config.API_BASE_URL}/member/logout`, {}, {
+            const response = await axios.post('http://localhost:8080/member/logout', {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.status === 200) {
@@ -154,7 +158,7 @@ const Home = () => {
         }
 
         try {
-            const response = await axios.get(`${config.API_BASE_URL}/member/login-logs`, {
+            const response = await axios.get('http://localhost:8080/member/login-logs', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             console.log('Login Logs Response:', response.data);
@@ -173,13 +177,13 @@ const Home = () => {
                             ${response.data
                                 .map(
                                     (log, index) => `
-                                        <tr>
-                                            <td>${index + 1}</td>
-                                            <td>${log.email}</td>
-                                            <td>${new Date(log.login_time).toLocaleString('th-TH')}</td>
-                                            <td class="${log.status === 'online' ? 'status-online' : 'status-offline'}">${log.status}</td>
-                                        </tr>
-                                    `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${log.email}</td>
+                                        <td>${new Date(log.login_time).toLocaleString('th-TH')}</td>
+                                        <td class="${log.status === 'online' ? 'status-online' : 'status-offline'}">${log.status}</td>
+                                    </tr>
+                                `
                                 )
                                 .join('')}
                         </tbody>
@@ -303,6 +307,16 @@ const Home = () => {
                     </div>
 
                     <div className="button-group">
+                        
+                        {/* 🚀 2. เพิ่มปุ่มสำหรับไปหน้า Realtime ตรงนี้ */}
+                        <button
+                            className="action-btn"
+                            onClick={() => navigate('/realtime')}
+                            style={{ marginTop: '10px' }}
+                        >
+                            <Activity size={18} /> ดูข้อมูล Realtime
+                        </button>
+                        
                         <button
                             className="action-btn"
                             onClick={() => navigate('/water-quality')}
