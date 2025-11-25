@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import db from '../db/db.js'; // ต้องใส่นามสกุล .js ด้วยใน ES Module
+
 const router = express.Router();
-const db = require('../db/db'); // เรียกใช้การเชื่อมต่อฐานข้อมูลที่มีอยู่
 
 // POST /api/devices/add - เพิ่มอุปกรณ์ใหม่
 router.post('/add', async (req, res) => {
@@ -41,7 +42,7 @@ router.post('/add', async (req, res) => {
     }
 });
 
-// GET /api/devices - ดึงรายชื่ออุปกรณ์ทั้งหมด (เผื่อใช้ในอนาคต)
+// GET /api/devices - ดึงรายชื่ออุปกรณ์ทั้งหมด
 router.get('/', async (req, res) => {
     try {
         const result = await db.query('SELECT * FROM devices ORDER BY added_at DESC');
@@ -52,4 +53,5 @@ router.get('/', async (req, res) => {
     }
 });
 
-module.exports = router;
+// ✅ ใช้ export default เพื่อให้ index.js สามารถ import ได้ถูกต้อง
+export default router;
