@@ -1,7 +1,7 @@
 import express from "express"
 import memberRoutes from "./routes/member.js"
 import registerRoutes from "./routes/register.js"
-import devicesRoutes from "./routes/devices.js" // 🚀 1. Import route ใหม่
+
 
 
 
@@ -18,7 +18,7 @@ app.use(express.json())
 
 app.use("/member", memberRoutes)
 app.use("/register", registerRoutes)
-app.use("/api/devices", devicesRoutes) // 🚀 2. เปิดใช้งาน Route นี้
+
 
 
 
