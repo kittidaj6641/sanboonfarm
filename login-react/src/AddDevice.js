@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, Save, HardDrive, Activity } from 'lucide-react';
+import { Home, Save, HardDrive } from 'lucide-react';
+import axios from 'axios';
+import config from './config'; // นำเข้า config เพื่อเอา URL Backend
 import './AddDevice.css';
-
-// Import Firebase
-import { database } from './firebaseConfig';
-import { ref, set } from "firebase/database";
 
 function AddDevice() {
   const navigate = useNavigate();
@@ -28,24 +26,28 @@ function AddDevice() {
     e.preventDefault();
     setLoading(true);
 
-    try {
-      // บันทึกข้อมูลลง Firebase Realtime Database
-      // เก็บไว้ที่ path: devices/{deviceId}
-      const deviceRef = ref(database, 'devices/' + formData.deviceId);
-      
-      await set(deviceRef, {
-        name: formData.deviceName,
-        id: formData.deviceId,
-        location: formData.location,
-        addedAt: new Date().toISOString(),
-        status: 'active'
-      });
+    const token = localStorage.getItem('token');
 
-      alert('✅ เพิ่มอุปกรณ์สำเร็จเรียบร้อยแล้ว!');
-      navigate('/'); // กลับหน้าหลัก
+    try {
+      // ยิง API ไปที่ Backend (PostgreSQL)
+      const response = await axios.post(
+        `${config.API_BASE_URL}/api/devices/add`, 
+        formData,
+        {
+            // ส่ง Token ไปด้วยเพื่อความปลอดภัย (ถ้า Backend เช็ค)
+            headers: { Authorization: `Bearer ${token}` } 
+        }
+      );
+
+      if (response.status === 201) {
+        alert('✅ บันทึกข้อมูลลงฐานข้อมูลสำเร็จ!');
+        navigate('/'); // กลับหน้าหลัก
+      }
     } catch (error) {
       console.error("Error adding device:", error);
-      alert('❌ เกิดข้อผิดพลาด: ' + error.message);
+      // แสดงข้อความ Error จาก Backend ถ้ามี
+      const errorMsg = error.response?.data?.error || "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้";
+      alert(`❌ เกิดข้อผิดพลาด: ${errorMsg}`);
     } finally {
       setLoading(false);
     }
@@ -69,7 +71,7 @@ function AddDevice() {
             <HardDrive size={32} color="#007bff" />
           </div>
           <h1>ลงทะเบียนอุปกรณ์ใหม่</h1>
-          <p>กรอกข้อมูลเพื่อเชื่อมต่อเซ็นเซอร์เข้ากับระบบ</p>
+          <p>ข้อมูลจะถูกบันทึกลงในฐานข้อมูล PostgreSQL (Railway)</p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -96,7 +98,7 @@ function AddDevice() {
                 onChange={handleChange}
                 required 
               />
-              <small className="hint">* ต้องตรงกับรหัสที่ตั้งในโค้ด Arduino/ESP32</small>
+              <small className="hint">* ต้องตรงกับรหัสในโค้ด ESP32 และไม่ซ้ำกับที่มีอยู่</small>
             </div>
           </div>
 
