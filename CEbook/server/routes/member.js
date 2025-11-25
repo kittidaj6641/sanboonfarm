@@ -119,5 +119,5 @@ router.post('/water-quality-sensor', async (req, res) => {
 });
 
 
-module.exports = router;
+
 export default router;
