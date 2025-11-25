@@ -118,6 +118,4 @@ router.post('/water-quality-sensor', async (req, res) => {
   }
 });
 
-
-
 export default router;
