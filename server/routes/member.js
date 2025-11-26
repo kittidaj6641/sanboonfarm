@@ -7,7 +7,6 @@ import dotenv from "dotenv";
 import { verifyToken } from "../middleware/auth.js";
 
 
-
 dotenv.config();
 const router = express.Router();
 
