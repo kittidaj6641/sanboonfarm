@@ -152,5 +152,54 @@ router.post('/water-quality-sensor', async (req, res) => {
   }
 });
 
+router.post('/devices/add', auth, async (req, res) => {
+    const { deviceName, deviceId, location } = req.body;
+
+    // Validate input
+    if (!deviceName || !deviceId) {
+        return res.status(400).json({ error: 'กรุณากรอกชื่อและรหัสอุปกรณ์' });
+    }
+
+    try {
+        // 1. ตรวจสอบว่ามี Device ID ซ้ำหรือไม่
+        const checkQuery = 'SELECT * FROM devices WHERE device_id = $1';
+        const checkResult = await db.query(checkQuery, [deviceId]);
+
+        if (checkResult.rows.length > 0) {
+            return res.status(400).json({ error: 'รหัสอุปกรณ์นี้ (Device ID) มีอยู่ในระบบแล้ว' });
+        }
+
+        // 2. บันทึกข้อมูล
+        const insertQuery = `
+            INSERT INTO devices (device_name, device_id, location, status, added_at)
+            VALUES ($1, $2, $3, 'active', NOW())
+            RETURNING *
+        `;
+        const values = [deviceName, deviceId, location];
+        const result = await db.query(insertQuery, values);
+
+        console.log('Device added:', result.rows[0]);
+        res.status(201).json({ 
+            message: 'เพิ่มอุปกรณ์สำเร็จ', 
+            device: result.rows[0] 
+        });
+
+    } catch (err) {
+        console.error('Error adding device:', err);
+        res.status(500).json({ error: 'เกิดข้อผิดพลาดทางเทคนิค ไม่สามารถบันทึกข้อมูลได้' });
+    }
+});
+
+// GET /member/devices - ดึงข้อมูลอุปกรณ์ทั้งหมด
+router.get('/devices', auth, async (req, res) => {
+    try {
+        const result = await db.query('SELECT * FROM devices ORDER BY added_at DESC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error fetching devices' });
+    }
+});
+
 export default router;
 
