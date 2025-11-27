@@ -5,6 +5,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { verifyToken } from "../middleware/auth.js";
+import auth from '../middleware/auth.js'; // ✅ Import auth middleware
+
 
 dotenv.config();
 const router = express.Router();
@@ -119,16 +121,16 @@ router.post('/water-quality-sensor', async (req, res) => {
 });
 
 // API: เพิ่มอุปกรณ์ใหม่ (POST /api/devices/add)
-router.post('/add', async (req, res) => {
+router.post('/devices/add', auth, async (req, res) => {
     const { deviceName, deviceId, location } = req.body;
 
-    // ตรวจสอบว่ามีการกรอกข้อมูลครบถ้วนหรือไม่
+    // Validate input
     if (!deviceName || !deviceId) {
         return res.status(400).json({ error: 'กรุณากรอกชื่อและรหัสอุปกรณ์' });
     }
 
     try {
-        // 1. เช็คว่า Device ID นี้มีอยู่แล้วหรือยัง
+        // 1. ตรวจสอบว่ามี Device ID ซ้ำหรือไม่
         const checkQuery = 'SELECT * FROM devices WHERE device_id = $1';
         const checkResult = await db.query(checkQuery, [deviceId]);
 
@@ -136,7 +138,7 @@ router.post('/add', async (req, res) => {
             return res.status(400).json({ error: 'รหัสอุปกรณ์นี้ (Device ID) มีอยู่ในระบบแล้ว' });
         }
 
-        // 2. บันทึกข้อมูลลงตาราง devices
+        // 2. บันทึกข้อมูล
         const insertQuery = `
             INSERT INTO devices (device_name, device_id, location, status, added_at)
             VALUES ($1, $2, $3, 'active', NOW())
@@ -157,8 +159,8 @@ router.post('/add', async (req, res) => {
     }
 });
 
-// API: ดึงข้อมูลอุปกรณ์ทั้งหมด (GET /api/devices)
-router.get('/', async (req, res) => {
+// GET /member/devices - ดึงข้อมูลอุปกรณ์ทั้งหมด
+router.get('/devices', auth, async (req, res) => {
     try {
         const result = await db.query('SELECT * FROM devices ORDER BY added_at DESC');
         res.json(result.rows);
@@ -167,6 +169,8 @@ router.get('/', async (req, res) => {
         res.status(500).json({ error: 'Error fetching devices' });
     }
 });
+
+
 
 
 export default router;
