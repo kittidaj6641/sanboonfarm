@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Home, Save, HardDrive } from 'lucide-react';
@@ -8,26 +8,13 @@ import './AddDevice.css';
 
 function AddDevice() {
   const navigate = useNavigate();
-  
-  // State สำหรับเก็บข้อมูลฟอร์ม
   const [formData, setFormData] = useState({
     deviceName: '',
     deviceId: '',
     location: ''
   });
-  
   const [loading, setLoading] = useState(false);
 
-  // ตรวจสอบว่าผู้ใช้ล็อกอินหรือยังเมื่อเข้ามาที่หน้านี้
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert('กรุณาเข้าสู่ระบบก่อนใช้งาน');
-      navigate('/login');
-    }
-  }, [navigate]);
-
-  // ฟังก์ชันจัดการการเปลี่ยนค่าใน Input
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -35,22 +22,14 @@ function AddDevice() {
     });
   };
 
-  // ฟังก์ชันส่งข้อมูลเมื่อกดปุ่มบันทึก
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     const token = localStorage.getItem('token');
 
-    // ป้องกันกรณี token หายไประหว่างใช้งาน
-    if (!token) {
-        alert('Session หมดอายุ กรุณาล็อกอินใหม่');
-        navigate('/login');
-        return;
-    }
-
     try {
-      // ยิง API ไปที่ Backend (path ใหม่ที่อยู่ใน member.js)
+      // ยิง API ไปที่ Backend ของเรา (path ใหม่ที่อยู่ใน member.js)
       const response = await axios.post(
         `${config.API_BASE_URL}/member/devices/add`, 
         formData,
@@ -60,14 +39,12 @@ function AddDevice() {
       );
 
       if (response.status === 201) {
-        alert('✅ บันทึกข้อมูลอุปกรณ์สำเร็จ!');
-        navigate('/'); // กลับหน้าหลักเมื่อเสร็จ
+        alert('✅ บันทึกข้อมูลลงฐานข้อมูลสำเร็จ!');
+        navigate('/'); // กลับหน้าหลัก
       }
     } catch (error) {
       console.error("Error adding device:", error);
-      
-      // แสดงข้อความ Error จาก Backend หรือข้อความทั่วไป
-      const errorMsg = error.response?.data?.error || error.message || "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้";
+      const errorMsg = error.response?.data?.error || "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้";
       alert(`❌ เกิดข้อผิดพลาด: ${errorMsg}`);
     } finally {
       setLoading(false);
@@ -82,7 +59,6 @@ function AddDevice() {
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3 }}
     >
-      {/* ปุ่มกลับหน้าหลัก */}
       <button onClick={() => navigate('/')} className="back-home-btn">
         <Home size={16} /> กลับหน้าหลัก
       </button>
@@ -93,7 +69,7 @@ function AddDevice() {
             <HardDrive size={32} color="#007bff" />
           </div>
           <h1>ลงทะเบียนอุปกรณ์</h1>
-          <p>เพิ่มอุปกรณ์ใหม่เข้าสู่ระบบ</p>
+          <p>เพิ่มอุปกรณ์ใหม่ลงในระบบฐานข้อมูล</p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -125,7 +101,7 @@ function AddDevice() {
           </div>
 
           <div className="form-group">
-            <label>สถานที่ติดตั้ง (Location)</label>
+            <label>สถานที่ติดตั้ง</label>
             <input 
               type="text" 
               name="location" 
