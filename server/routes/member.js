@@ -133,7 +133,7 @@ router.get('/devices', verifyToken, async (req, res) => {
     }
 });
 
-router.post("/devicesadd", verifyToken, async (req, res) => {
+router.post("/devices/add", verifyToken, async (req, res) => {
     const { deviceName, deviceId, location } = req.body;
     
     // req.user.id มาจาก verifyToken ซึ่งคือ id ของ user ที่ login อยู่
