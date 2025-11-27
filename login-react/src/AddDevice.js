@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Home, Save, HardDrive } from 'lucide-react';
 import axios from 'axios';
-import config from './config'; // ดึง URL ของ Backend มาใช้
+import config from './config';
 import './AddDevice.css';
 
 function AddDevice() {
@@ -14,6 +14,14 @@ function AddDevice() {
     location: ''
   });
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('กรุณาเข้าสู่ระบบก่อนใช้งาน');
+      navigate('/login');
+    }
+  }, [navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -27,9 +35,15 @@ function AddDevice() {
     setLoading(true);
 
     const token = localStorage.getItem('token');
+    
+    if (!token) {
+        alert('Session หมดอายุ กรุณาล็อกอินใหม่');
+        navigate('/login');
+        return;
+    }
 
     try {
-      // ยิง API ไปที่ Backend ของเรา (path ใหม่ที่อยู่ใน member.js)
+      // ยิง API ไปที่ /member/devices/add
       const response = await axios.post(
         `${config.API_BASE_URL}/member/devices/add`, 
         formData,
@@ -39,8 +53,8 @@ function AddDevice() {
       );
 
       if (response.status === 201) {
-        alert('✅ บันทึกข้อมูลลงฐานข้อมูลสำเร็จ!');
-        navigate('/'); // กลับหน้าหลัก
+        alert('✅ เพิ่มอุปกรณ์สำเร็จ!');
+        navigate('/');
       }
     } catch (error) {
       console.error("Error adding device:", error);
