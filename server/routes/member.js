@@ -125,8 +125,13 @@ router.post('/water-quality-sensor', async (req, res) => {
 
 // ✅ API: เพิ่มอุปกรณ์ใหม่ (POST /member/devices/add)
 // เพิ่มอุปกรณ์ใหม่
+// --- เพิ่มโค้ดส่วนนี้ลงไปใน routes/member.js ---
+
+// เพิ่มอุปกรณ์ใหม่
 router.post("/devices/add", verifyToken, async (req, res) => {
     const { deviceName, deviceId, location } = req.body;
+    
+    // req.user.id มาจาก verifyToken ซึ่งคือ id ของ user ที่ login อยู่
     const userId = req.user.id; 
 
     if (!deviceName || !deviceId) {
@@ -134,13 +139,13 @@ router.post("/devices/add", verifyToken, async (req, res) => {
     }
 
     try {
-        // ตรวจสอบว่ามี Device ID ซ้ำหรือไม่
+        // 1. ตรวจสอบว่ามี Device ID ซ้ำหรือไม่
         const deviceExists = await pool.query("SELECT * FROM devices WHERE device_id = $1", [deviceId]);
         if (deviceExists.rows.length > 0) {
             return res.status(400).json({ msg: "รหัสอุปกรณ์นี้มีอยู่แล้วในระบบ" });
         }
 
-        // บันทึกลงฐานข้อมูล
+        // 2. บันทึกลงฐานข้อมูล (ตาราง devices)
         const newDevice = await pool.query(
             "INSERT INTO devices (device_name, device_id, location, user_id) VALUES ($1, $2, $3, $4) RETURNING *",
             [deviceName, deviceId, location, userId]
