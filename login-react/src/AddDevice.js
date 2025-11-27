@@ -45,7 +45,7 @@ function AddDevice() {
     try {
       // ยิง API ไปที่ /member/devices/add
       const response = await axios.post(
-        `${config.API_BASE_URL}/member/devices/add, 
+        `${config.API_BASE_URL}/member/devices/add`, 
         formData,
         {
             headers: { Authorization: `Bearer ${token}` } 
