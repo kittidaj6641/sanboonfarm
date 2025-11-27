@@ -21,6 +21,7 @@ const AnimatedRoutes = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/Realtime" element={<Realtime />} />
+                <Route path="/add-device" element={<AddDevice />} />
                 <Route path="/water-quality" element={<WaterQuality />} />
                 <Route path="/shrimp-info" element={<ShrimpInfo />} />
                 <Route path="/status" element={<Status />} /> 
