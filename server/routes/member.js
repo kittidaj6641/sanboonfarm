@@ -119,15 +119,20 @@ router.post('/water-quality-sensor', async (req, res) => {
   }
 });
 
-// ==========================================
-// 🚀 ส่วนจัดการอุปกรณ์ (Device Management)
-// ==========================================
 
-// ✅ API: เพิ่มอุปกรณ์ใหม่ (POST /member/devices/add)
-// เพิ่มอุปกรณ์ใหม่
-// --- เพิ่มโค้ดส่วนนี้ลงไปใน routes/member.js ---
 
-// เพิ่มอุปกรณ์ใหม่
+// GET /member/devices - ดึงข้อมูลอุปกรณ์ทั้งหมด
+// ✅ แก้ไข: เปลี่ยนจาก auth เป็น verifyToken ตรงนี้ด้วย!
+router.get('/devices', verifyToken, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM devices ORDER BY added_at DESC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error fetching devices' });
+    }
+});
+
 router.post("/devices/add", verifyToken, async (req, res) => {
     const { deviceName, deviceId, location } = req.body;
     
@@ -155,18 +160,6 @@ router.post("/devices/add", verifyToken, async (req, res) => {
     } catch (err) {
         console.error("Error adding device:", err);
         res.status(500).json({ error: "Server Error " + err.message });
-    }
-});
-
-// GET /member/devices - ดึงข้อมูลอุปกรณ์ทั้งหมด
-// ✅ แก้ไข: เปลี่ยนจาก auth เป็น verifyToken ตรงนี้ด้วย!
-router.get('/devices', verifyToken, async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM devices ORDER BY added_at DESC');
-        res.json(result.rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Error fetching devices' });
     }
 });
 
