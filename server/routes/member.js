@@ -126,22 +126,38 @@ router.post('/water-quality-sensor', async (req, res) => {
 // API: เพิ่มอุปกรณ์ใหม่ (POST /member/devices/add)
 // ✅ แก้ไข: เปลี่ยนจาก auth เป็น verifyToken ตรงนี้!
 // ✅ API: เพิ่มอุปกรณ์ใหม่ (POST /member/devices/add)
+// ส่วนของ API เพิ่มอุปกรณ์ - แก้ไขแล้ว
 router.post('/devices/add', verifyToken, async (req, res) => {
+    console.log('📥 Received POST /member/devices/add');
+    console.log('📦 Request body:', req.body);
+    console.log('👤 User from token:', req.user);
+
     const { deviceName, deviceId, location } = req.body;
 
     // ตรวจสอบข้อมูล
     if (!deviceName || !deviceId) {
-        return res.status(400).json({ error: 'กรุณากรอกชื่อและรหัสอุปกรณ์' });
+        console.log('❌ Validation failed: Missing deviceName or deviceId');
+        return res.status(400).json({ 
+            error: 'กรุณากรอกชื่อและรหัสอุปกรณ์',
+            received: { deviceName, deviceId, location }
+        });
     }
 
     try {
         // 1. ตรวจสอบว่ามี Device ID นี้อยู่แล้วหรือไม่
+        console.log('🔍 Checking if device_id exists:', deviceId);
         const checkQuery = 'SELECT * FROM devices WHERE device_id = $1';
         const checkResult = await pool.query(checkQuery, [deviceId]);
 
         if (checkResult.rows.length > 0) {
-            return res.status(400).json({ error: 'รหัสอุปกรณ์นี้ (Device ID) มีอยู่ในระบบแล้ว' });
+            console.log('❌ Device ID already exists');
+            return res.status(400).json({ 
+                error: 'รหัสอุปกรณ์นี้ (Device ID) มีอยู่ในระบบแล้ว',
+                deviceId: deviceId
+            });
         }
+
+        console.log('✅ Device ID is unique, proceeding to insert...');
 
         // 2. บันทึกข้อมูล
         const insertQuery = `
@@ -149,18 +165,30 @@ router.post('/devices/add', verifyToken, async (req, res) => {
             VALUES ($1, $2, $3, 'active', NOW())
             RETURNING *
         `;
-        const values = [deviceName, deviceId, location];
+        const values = [deviceName, deviceId, location || null];
+        
+        console.log('💾 Executing insert query with values:', values);
         const result = await pool.query(insertQuery, values);
 
-        console.log('Device added:', result.rows[0]);
+        console.log('✅ Device added successfully:', result.rows[0]);
+        
         res.status(201).json({ 
             message: 'เพิ่มอุปกรณ์สำเร็จ', 
-            device: result.rows[0] 
+            device: result.rows[0]
         });
 
     } catch (err) {
-        console.error('Error adding device:', err);
-        res.status(500).json({ error: 'เกิดข้อผิดพลาดทางเทคนิค' });
+        console.error('❌ Error adding device:', err);
+        console.error('Error details:', {
+            message: err.message,
+            code: err.code,
+            detail: err.detail
+        });
+        
+        res.status(500).json({ 
+            error: 'เกิดข้อผิดพลาดทางเทคนิค',
+            details: err.message 
+        });
     }
 });
 
