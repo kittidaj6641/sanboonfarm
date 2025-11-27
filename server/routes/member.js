@@ -124,52 +124,31 @@ router.post('/water-quality-sensor', async (req, res) => {
 // ==========================================
 
 // ✅ API: เพิ่มอุปกรณ์ใหม่ (POST /member/devices/add)
-router.post('/devices/add', verifyToken, async (req, res) => {
-    console.log('📥 POST /member/devices/add - Request received');
-    console.log('📦 Body:', req.body);
-    
+router.post("/devices/add", verifyToken, async (req, res) => {
     const { deviceName, deviceId, location } = req.body;
+    const userId = req.user.id; // ได้มาจาก verifyToken
 
     if (!deviceName || !deviceId) {
-        console.log('❌ Validation failed');
-        return res.status(400).json({ 
-            error: 'กรุณากรอกชื่อและรหัสอุปกรณ์' 
-        });
+        return res.status(400).json({ msg: "กรุณากรอกชื่อและรหัสอุปกรณ์" });
     }
 
     try {
         // ตรวจสอบว่ามี Device ID ซ้ำหรือไม่
-        const checkQuery = 'SELECT * FROM devices WHERE device_id = $1';
-        const checkResult = await pool.query(checkQuery, [deviceId]);
-
-        if (checkResult.rows.length > 0) {
-            console.log('❌ Device ID already exists');
-            return res.status(400).json({ 
-                error: 'รหัสอุปกรณ์นี้มีอยู่ในระบบแล้ว' 
-            });
+        const deviceExists = await pool.query("SELECT * FROM devices WHERE device_id = $1", [deviceId]);
+        if (deviceExists.rows.length > 0) {
+            return res.status(400).json({ msg: "รหัสอุปกรณ์นี้มีอยู่แล้วในระบบ" });
         }
 
-        // บันทึกข้อมูล
-        const insertQuery = `
-            INSERT INTO devices (device_name, device_id, location, status, added_at)
-            VALUES ($1, $2, $3, 'active', NOW())
-            RETURNING *
-        `;
-        const result = await pool.query(insertQuery, [deviceName, deviceId, location]);
+        // บันทึกลงฐานข้อมูล
+        const newDevice = await pool.query(
+            "INSERT INTO devices (device_name, device_id, location, user_id) VALUES ($1, $2, $3, $4) RETURNING *",
+            [deviceName, deviceId, location, userId]
+        );
 
-        console.log('✅ Device added:', result.rows[0]);
-        
-        res.status(201).json({ 
-            message: 'เพิ่มอุปกรณ์สำเร็จ', 
-            device: result.rows[0] 
-        });
-
+        res.status(201).json({ msg: "เพิ่มอุปกรณ์สำเร็จ", device: newDevice.rows[0] });
     } catch (err) {
-        console.error('❌ Error:', err);
-        res.status(500).json({ 
-            error: 'เกิดข้อผิดพลาดทางเทคนิค',
-            details: err.message 
-        });
+        console.error("Error adding device:", err);
+        res.status(500).json({ error: "Server Error " + err.message });
     }
 });
 
