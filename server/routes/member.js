@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
-// ✅ แก้ไข: Import เฉพาะ verifyToken ให้ถูกต้อง (ลบ auth ที่ไม่ได้ใช้ออก)
+// ✅ 1. Import verifyToken ตัวเดียวพอ (ลบ import auth ทิ้งไปเลยครับ)
 import { verifyToken } from "../middleware/auth.js";
 
 dotenv.config();
@@ -18,21 +18,16 @@ const genToken = (user) => {
     );
 };
 
-// --- 1. ส่วนจัดการสมาชิก (Auth) ---
-
 // Login
 router.post("/login", async (req, res) => {
     const { email, password } = req.body;
     try {
         const user = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
         if (user.rows.length === 0) return res.status(400).json({ msg: "ไม่พบ Email" });
-        
         const validPassword = await bcrypt.compare(password, user.rows[0].password);
         if (!validPassword) return res.status(400).json({ msg: "Password ไม่ถูกต้อง" });
-        
         const token = genToken(user.rows[0]);
         await pool.query("INSERT INTO login_logs (email, login_time, status) VALUES ($1, NOW(), $2)", [email, "online"]);
-        
         res.json({ msg: "เข้าสู่ระบบสำเร็จ", token });
     } catch (err) {
         console.error('Login error:', err);
@@ -55,7 +50,7 @@ router.post("/logout", verifyToken, async (req, res) => {
     }
 });
 
-// Profile
+// แสดงโปรไฟล์ member
 router.get("/", verifyToken, async (req, res) => {
     const userid = req.user.id;
     try {
@@ -67,16 +62,13 @@ router.get("/", verifyToken, async (req, res) => {
     }
 });
 
-// Register (เพิ่ม user ใหม่)
 router.post("/", async (req, res) => {
     const { name, email, password } = req.body;
     try {
         const userExists = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
         if (userExists.rows.length > 0) return res.json({ msg: "Email นี้มีการใช้งานแล้ว" });
-        
         const hashedPass = await bcrypt.hash(password, 10);
         const newUser = await pool.query("INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING name, email", [name, email, hashedPass]);
-        
         res.status(201).json({ msg: "สมัครสมาชิกสำเร็จ", user: newUser.rows[0] });
     } catch (err) {
         console.error('User registration error:', err);
@@ -84,7 +76,7 @@ router.post("/", async (req, res) => {
     }
 });
 
-// Login Logs
+// ดึง login logs
 router.get("/login-logs", verifyToken, async (req, res) => {
     try {
         const logs = await pool.query("SELECT email, login_time, status FROM login_logs WHERE email = $1 ORDER BY login_time DESC", [req.user.email]);
@@ -95,8 +87,7 @@ router.get("/login-logs", verifyToken, async (req, res) => {
     }
 });
 
-// --- 2. ส่วนจัดการคุณภาพน้ำ ---
-
+// ดึงข้อมูล water_quality 8 ตัวล่าสุด
 router.get("/water-quality", verifyToken, async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM water_quality ORDER BY recorded_at DESC LIMIT 8");
@@ -107,37 +98,43 @@ router.get("/water-quality", verifyToken, async (req, res) => {
     }
 });
 
+// รับข้อมูลจากเซ็นเซอร์และบันทึกใน water_quality
 router.post('/water-quality-sensor', async (req, res) => {
   const { dissolved_oxygen, ph, temperature, turbidity } = req.body;
+
   if (!dissolved_oxygen || !ph || !temperature || !turbidity) {
-    return res.status(400).json({ msg: "Missing sensor values" });
+    return res.status(400).json({ msg: "Missing dissolved_oxygen, ph, temperature, or turbidity value" });
   }
+
   try {
     const result = await pool.query(
       "INSERT INTO water_quality (dissolved_oxygen, ph, temperature, turbidity) VALUES ($1, $2, $3, $4) RETURNING *",
       [dissolved_oxygen, ph, temperature, turbidity]
     );
-    console.log('Data saved:', result.rows[0]);
+    console.log('Water quality data saved at', new Date().toISOString(), ':', result.rows[0]);
     res.status(201).json({ msg: "Data saved successfully", data: result.rows[0] });
   } catch (err) {
-    console.error('Sensor error:', err);
+    console.error('Water quality sensor error at', new Date().toISOString(), ':', err);
     res.status(500).json({ error: "Server Error " + err.message });
   }
 });
 
-// --- 3. ส่วนจัดการอุปกรณ์ (Device Management) ---
+// ==========================================
+// 🚀 ส่วนจัดการอุปกรณ์ (Device Management)
+// ==========================================
 
-// ✅ แก้ไข: ใช้ verifyToken แทน auth (ที่เคยผิด)
+// API: เพิ่มอุปกรณ์ใหม่ (POST /member/devices/add)
+// ✅ แก้ไข: เปลี่ยนจาก auth เป็น verifyToken ตรงนี้!
 router.post('/devices/add', verifyToken, async (req, res) => {
     const { deviceName, deviceId, location } = req.body;
 
-    // ตรวจสอบข้อมูล
+    // Validate input
     if (!deviceName || !deviceId) {
         return res.status(400).json({ error: 'กรุณากรอกชื่อและรหัสอุปกรณ์' });
     }
 
     try {
-        // 1. ตรวจสอบว่ามี Device ID นี้อยู่แล้วหรือไม่
+        // 1. ตรวจสอบว่ามี Device ID ซ้ำหรือไม่
         const checkQuery = 'SELECT * FROM devices WHERE device_id = $1';
         const checkResult = await pool.query(checkQuery, [deviceId]);
 
@@ -162,11 +159,12 @@ router.post('/devices/add', verifyToken, async (req, res) => {
 
     } catch (err) {
         console.error('Error adding device:', err);
-        res.status(500).json({ error: 'เกิดข้อผิดพลาดทางเทคนิค' });
+        res.status(500).json({ error: 'เกิดข้อผิดพลาดทางเทคนิค ไม่สามารถบันทึกข้อมูลได้' });
     }
 });
 
-// ✅ GET Devices
+// GET /member/devices - ดึงข้อมูลอุปกรณ์ทั้งหมด
+// ✅ แก้ไข: เปลี่ยนจาก auth เป็น verifyToken ตรงนี้ด้วย!
 router.get('/devices', verifyToken, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM devices ORDER BY added_at DESC');
