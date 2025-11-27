@@ -125,16 +125,17 @@ router.post('/water-quality-sensor', async (req, res) => {
 
 // API: เพิ่มอุปกรณ์ใหม่ (POST /member/devices/add)
 // ✅ แก้ไข: เปลี่ยนจาก auth เป็น verifyToken ตรงนี้!
+// ✅ API: เพิ่มอุปกรณ์ใหม่ (POST /member/devices/add)
 router.post('/devices/add', verifyToken, async (req, res) => {
     const { deviceName, deviceId, location } = req.body;
 
-    // Validate input
+    // ตรวจสอบข้อมูล
     if (!deviceName || !deviceId) {
         return res.status(400).json({ error: 'กรุณากรอกชื่อและรหัสอุปกรณ์' });
     }
 
     try {
-        // 1. ตรวจสอบว่ามี Device ID ซ้ำหรือไม่
+        // 1. ตรวจสอบว่ามี Device ID นี้อยู่แล้วหรือไม่
         const checkQuery = 'SELECT * FROM devices WHERE device_id = $1';
         const checkResult = await pool.query(checkQuery, [deviceId]);
 
@@ -159,7 +160,7 @@ router.post('/devices/add', verifyToken, async (req, res) => {
 
     } catch (err) {
         console.error('Error adding device:', err);
-        res.status(500).json({ error: 'เกิดข้อผิดพลาดทางเทคนิค ไม่สามารถบันทึกข้อมูลได้' });
+        res.status(500).json({ error: 'เกิดข้อผิดพลาดทางเทคนิค' });
     }
 });
 
