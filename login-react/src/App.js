@@ -8,6 +8,7 @@ import Home from './Home';
 import ShrimpInfo from './ShrimpInfo';
 import Status from './Status';
 import Realtime from './Realtime';
+import AddDevice from './AddDevice';
 
 
 const AnimatedRoutes = () => {
