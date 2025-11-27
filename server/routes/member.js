@@ -124,9 +124,10 @@ router.post('/water-quality-sensor', async (req, res) => {
 // ==========================================
 
 // ✅ API: เพิ่มอุปกรณ์ใหม่ (POST /member/devices/add)
+// เพิ่มอุปกรณ์ใหม่
 router.post("/devices/add", verifyToken, async (req, res) => {
     const { deviceName, deviceId, location } = req.body;
-    const userId = req.user.id; // ได้มาจาก verifyToken
+    const userId = req.user.id; 
 
     if (!deviceName || !deviceId) {
         return res.status(400).json({ msg: "กรุณากรอกชื่อและรหัสอุปกรณ์" });
