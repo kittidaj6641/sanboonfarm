@@ -121,7 +121,7 @@ router.post('/water-quality-sensor', async (req, res) => {
 });
 
 // API: เพิ่มอุปกรณ์ใหม่ (POST /api/devices/add)
-router.post('/devices/add', auth, async (req, res) => {
+router.post('/devices/add', verifyToken, async (req, res) => {
     const { deviceName, deviceId, location } = req.body;
 
     // Validate input
