@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, Save, HardDrive } from 'lucide-react';
+import { Home, Save, HardDrive, AlertCircle, CheckCircle } from 'lucide-react';
 import axios from 'axios';
-import config from './config'; // ✅ ตรวจสอบ path ให้ถูกต้อง
+import config from './config';
 import './AddDevice.css';
 
 function AddDevice() {
@@ -15,9 +15,11 @@ function AddDevice() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    console.log('🔑 Token check:', token ? 'Found' : 'Not found');
     if (!token) {
       alert('กรุณาเข้าสู่ระบบก่อนใช้งาน');
       navigate('/login');
@@ -30,18 +32,24 @@ function AddDevice() {
       [e.target.name]: e.target.value
     });
     if (error) setError('');
+    if (success) setSuccess('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('🚀 Form submitted');
     
+    // Validation
     if (!formData.deviceName.trim() || !formData.deviceId.trim()) {
-      setError('กรุณากรอกชื่อและรหัสอุปกรณ์');
+      const msg = 'กรุณากรอกชื่อและรหัสอุปกรณ์';
+      setError(msg);
+      console.error('❌ Validation failed:', msg);
       return;
     }
 
     setLoading(true);
     setError('');
+    setSuccess('');
 
     const token = localStorage.getItem('token');
     
@@ -51,49 +59,99 @@ function AddDevice() {
       return;
     }
 
+    const apiUrl = `${config.API_BASE_URL}/member/devices/add`;
+    
+    console.log('📤 API Request:');
+    console.log('   URL:', apiUrl);
+    console.log('   Data:', {
+      deviceName: formData.deviceName.trim(),
+      deviceId: formData.deviceId.trim(),
+      location: formData.location.trim()
+    });
+    console.log('   Token (first 30 chars):', token.substring(0, 30) + '...');
+
     try {
-      console.log('Target API:', `${config.API_BASE_URL}/member/devices/add`);
-      
       const response = await axios.post(
-        `${config.API_BASE_URL}/member/devices/add`, 
-        formData,
+        apiUrl, 
+        {
+          deviceName: formData.deviceName.trim(),
+          deviceId: formData.deviceId.trim(),
+          location: formData.location.trim() || ''
+        },
         {
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
-          } 
+          },
+          timeout: 15000
         }
       );
 
-      if (response.status === 201) {
-        alert('✅ เพิ่มอุปกรณ์สำเร็จ!');
+      console.log('✅ Response received:');
+      console.log('   Status:', response.status);
+      console.log('   Data:', response.data);
+
+      if (response.status === 201 || response.status === 200) {
+        const successMsg = response.data.msg || response.data.message || 'เพิ่มอุปกรณ์สำเร็จ!';
+        setSuccess(successMsg);
+        console.log('✅ Success:', successMsg);
+        
+        // ล้างฟอร์ม
         setFormData({
           deviceName: '',
           deviceId: '',
           location: ''
         });
-        setTimeout(() => navigate('/'), 1000);
+        
+        // แสดง success message 2 วินาที แล้วกลับหน้าหลัก
+        setTimeout(() => {
+          navigate('/');
+        }, 2000);
       }
-    } catch (error) {
-      console.error("Error adding device:", error);
       
-      let errorMsg = "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ (Network Error)";
+    } catch (error) {
+      console.error('❌ Error occurred:');
+      console.error('   Full error:', error);
+      
+      let errorMsg = "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ";
       
       if (error.response) {
-        // Server ตอบกลับมา (เช่น 400, 500)
-        errorMsg = error.response.data?.error || error.response.data?.msg || errorMsg;
+        // Server ตอบกลับมาแต่เป็น error
+        console.error('   Response status:', error.response.status);
+        console.error('   Response data:', error.response.data);
+        console.error('   Response headers:', error.response.headers);
         
-        if (error.response.status === 401) {
-          errorMsg = 'Session หมดอายุ กรุณาล็อกอินใหม่';
+        errorMsg = error.response.data?.error || 
+                   error.response.data?.msg || 
+                   error.response.data?.message ||
+                   `Server Error (${error.response.status})`;
+        
+        if (error.response.status === 401 || error.response.status === 403) {
+          errorMsg = 'Token หมดอายุหรือไม่ถูกต้อง - กรุณาล็อกอินใหม่';
           setTimeout(() => navigate('/login'), 2000);
+        } else if (error.response.status === 400) {
+          // Bad request - แสดง error ที่ได้จาก server
+          errorMsg = error.response.data?.error || error.response.data?.msg || 'ข้อมูลไม่ถูกต้อง';
+        } else if (error.response.status === 404) {
+          errorMsg = 'ไม่พบ API Endpoint - ตรวจสอบ URL';
+        } else if (error.response.status === 500) {
+          errorMsg = 'เซิร์ฟเวอร์เกิดข้อผิดพลาด - ' + (error.response.data?.details || 'กรุณาลองใหม่อีกครั้ง');
         }
+        
       } else if (error.request) {
-        // ส่งไปไม่ถึง Server (CORS หรือ Server ล่ม)
-        errorMsg = "ไม่สามารถติดต่อ Server ได้ (ตรวจสอบ CORS หรือ Internet)";
+        // ส่ง request ไปแล้วแต่ไม่ได้รับ response
+        console.error('   Request sent but no response');
+        console.error('   Request:', error.request);
+        errorMsg = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ - ตรวจสอบว่า Backend กำลังรันอยู่";
+      } else {
+        // Error อื่นๆ ในการสร้าง request
+        console.error('   Error message:', error.message);
+        errorMsg = `Error: ${error.message}`;
       }
       
       setError(errorMsg);
-      alert(`❌ เกิดข้อผิดพลาด: ${errorMsg}`);
+      console.error('   Final error message:', errorMsg);
+      
     } finally {
       setLoading(false);
     }
@@ -120,16 +178,42 @@ function AddDevice() {
           <p>เพิ่มอุปกรณ์ใหม่ลงในระบบฐานข้อมูล</p>
         </div>
 
-        {error && (
-          <div className="error-message" style={{
-            padding: '10px',
+        {/* Success Message */}
+        {success && (
+          <div style={{
+            padding: '15px',
             marginBottom: '15px',
-            backgroundColor: '#fee',
-            border: '1px solid #fcc',
+            backgroundColor: '#d4edda',
+            border: '1px solid #c3e6cb',
             borderRadius: '4px',
-            color: '#c00'
+            color: '#155724',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
           }}>
-            {error}
+            <CheckCircle size={20} />
+            <strong>{success}</strong>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div style={{
+            padding: '15px',
+            marginBottom: '15px',
+            backgroundColor: '#f8d7da',
+            border: '1px solid #f5c6cb',
+            borderRadius: '4px',
+            color: '#721c24',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <AlertCircle size={20} />
+            <div>
+              <strong>เกิดข้อผิดพลาด</strong>
+              <div style={{ fontSize: '14px', marginTop: '5px' }}>{error}</div>
+            </div>
           </div>
         )}
 
@@ -139,11 +223,11 @@ function AddDevice() {
             <input 
               type="text" 
               name="deviceName" 
+              placeholder="เช่น บ่อกุ้งโซน A" 
               value={formData.deviceName}
               onChange={handleChange}
               disabled={loading}
               required 
-              placeholder="เช่น บ่อกุ้งโซน A" 
             />
           </div>
 
@@ -153,11 +237,11 @@ function AddDevice() {
               <input 
                 type="text" 
                 name="deviceId" 
+                placeholder="เช่น ESP32_001" 
                 value={formData.deviceId}
                 onChange={handleChange}
                 disabled={loading}
                 required 
-                placeholder="เช่น ESP32_001" 
               />
               <small className="hint">* ห้ามซ้ำกับที่มีอยู่ในระบบ</small>
             </div>
@@ -168,10 +252,10 @@ function AddDevice() {
             <input 
               type="text" 
               name="location" 
+              placeholder="ระบุพิกัด หรือ ชื่อฟาร์ม" 
               value={formData.location}
               onChange={handleChange}
               disabled={loading}
-              placeholder="ระบุพิกัด หรือ ชื่อฟาร์ม" 
             />
           </div>
 
@@ -179,14 +263,34 @@ function AddDevice() {
             type="submit" 
             className="submit-btn" 
             disabled={loading}
+            style={{
+              opacity: loading ? 0.6 : 1,
+              cursor: loading ? 'not-allowed' : 'pointer'
+            }}
           >
-            {loading ? 'กำลังบันทึก...' : (
+            {loading ? (
+              <>⏳ กำลังบันทึก...</>
+            ) : (
               <>
                 <Save size={18} /> บันทึกข้อมูล
               </>
             )}
           </button>
         </form>
+
+        {/* Debug Info */}
+        <div style={{
+          marginTop: '20px',
+          padding: '10px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '4px',
+          fontSize: '12px',
+          color: '#6c757d'
+        }}>
+          <strong>🔧 Debug Info:</strong><br/>
+          API URL: {config.API_BASE_URL}/member/devices/add<br/>
+          Token: {localStorage.getItem('token') ? '✅ พบ' : '❌ ไม่พบ'}
+        </div>
       </div>
     </motion.div>
   );
