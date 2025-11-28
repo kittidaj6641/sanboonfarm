@@ -3,9 +3,7 @@ import pool from "../db/db.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-
-// ✅ 1. Import verifyToken ตัวเดียวพอ (ลบ import auth ทิ้งไปเลยครับ)
-import { verifyToken } from "../middleware/auth.js";
+import { verifyToken } from "../middleware/auth.js"; // ตรวจสอบ path ให้ถูก
 
 dotenv.config();
 const router = express.Router();
@@ -18,7 +16,7 @@ const genToken = (user) => {
     );
 };
 
-// Login
+// --- Login & Logout (คงเดิม) ---
 router.post("/login", async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -35,7 +33,6 @@ router.post("/login", async (req, res) => {
     }
 });
 
-// Logout
 router.post("/logout", verifyToken, async (req, res) => {
     const email = req.user.email;
     try {
@@ -45,98 +42,72 @@ router.post("/logout", verifyToken, async (req, res) => {
         );
         res.json({ msg: "ออกจากระบบสำเร็จ" });
     } catch (err) {
-        console.error('Logout error:', err);
         res.status(500).json({ error: "Server Error " + err.message });
     }
 });
 
-// แสดงโปรไฟล์ member
+// --- Profile & Data (คงเดิม) ---
 router.get("/", verifyToken, async (req, res) => {
     const userid = req.user.id;
     try {
         const user = await pool.query("SELECT id, name, email, created_at FROM users WHERE id = $1", [userid]);
         res.json(user.rows[0]);
     } catch (error) {
-        console.error(error.message);
         res.status(500).json({ message: "เกิดข้อผิดพลาดในระบบ" });
     }
 });
 
-router.post("/", async (req, res) => {
-    const { name, email, password } = req.body;
-    try {
-        const userExists = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-        if (userExists.rows.length > 0) return res.json({ msg: "Email นี้มีการใช้งานแล้ว" });
-        const hashedPass = await bcrypt.hash(password, 10);
-        const newUser = await pool.query("INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING name, email", [name, email, hashedPass]);
-        res.status(201).json({ msg: "สมัครสมาชิกสำเร็จ", user: newUser.rows[0] });
-    } catch (err) {
-        console.error('User registration error:', err);
-        res.status(500).json({ error: "Server Error: " + err.message });
-    }
-});
-
-// ดึง login logs
 router.get("/login-logs", verifyToken, async (req, res) => {
     try {
         const logs = await pool.query("SELECT email, login_time, status FROM login_logs WHERE email = $1 ORDER BY login_time DESC", [req.user.email]);
         res.json(logs.rows);
     } catch (err) {
-        console.error('Login logs error:', err);
         res.status(500).json({ error: "Server Error " + err.message });
     }
 });
 
-// ดึงข้อมูล water_quality 8 ตัวล่าสุด
 router.get("/water-quality", verifyToken, async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM water_quality ORDER BY recorded_at DESC LIMIT 8");
         res.json(result.rows);
     } catch (err) {
-        console.error('Water quality fetch error:', err);
         res.status(500).json({ error: "Server Error " + err.message });
     }
 });
 
-// รับข้อมูลจากเซ็นเซอร์และบันทึกใน water_quality
 router.post('/water-quality-sensor', async (req, res) => {
   const { dissolved_oxygen, ph, temperature, turbidity } = req.body;
-
   if (!dissolved_oxygen || !ph || !temperature || !turbidity) {
-    return res.status(400).json({ msg: "Missing dissolved_oxygen, ph, temperature, or turbidity value" });
+    return res.status(400).json({ msg: "Missing values" });
   }
-
   try {
     const result = await pool.query(
       "INSERT INTO water_quality (dissolved_oxygen, ph, temperature, turbidity) VALUES ($1, $2, $3, $4) RETURNING *",
       [dissolved_oxygen, ph, temperature, turbidity]
     );
-    console.log('Water quality data saved at', new Date().toISOString(), ':', result.rows[0]);
     res.status(201).json({ msg: "Data saved successfully", data: result.rows[0] });
   } catch (err) {
-    console.error('Water quality sensor error at', new Date().toISOString(), ':', err);
     res.status(500).json({ error: "Server Error " + err.message });
   }
 });
 
-
-
-// GET /member/devices - ดึงข้อมูลอุปกรณ์ทั้งหมด
-// ✅ แก้ไข: เปลี่ยนจาก auth เป็น verifyToken ตรงนี้ด้วย!
 router.get('/devices', verifyToken, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM devices ORDER BY added_at DESC');
         res.json(result.rows);
     } catch (err) {
-        console.error(err);
         res.status(500).json({ error: 'Error fetching devices' });
     }
 });
 
+// ✅ ส่วน Add Device (ปรับปรุงใหม่)
 router.post("/devices/add", verifyToken, async (req, res) => {
     const { deviceName, deviceId, location } = req.body;
     
-    // req.user.id มาจาก verifyToken ซึ่งคือ id ของ user ที่ login อยู่
+    // ตรวจสอบ Token
+    if (!req.user || !req.user.id) {
+        return res.status(401).json({ msg: "Token ไม่ถูกต้อง" });
+    }
     const userId = req.user.id; 
 
     if (!deviceName || !deviceId) {
@@ -144,13 +115,14 @@ router.post("/devices/add", verifyToken, async (req, res) => {
     }
 
     try {
-        // 1. ตรวจสอบว่ามี Device ID ซ้ำหรือไม่
+        // 1. เช็ค Device ซ้ำ
         const deviceExists = await pool.query("SELECT * FROM devices WHERE device_id = $1", [deviceId]);
         if (deviceExists.rows.length > 0) {
             return res.status(400).json({ msg: "รหัสอุปกรณ์นี้มีอยู่แล้วในระบบ" });
         }
 
-        // 2. บันทึกลงฐานข้อมูล (ตาราง devices)
+        // 2. บันทึก
+        console.log(`Adding device: ${deviceName} by user ${userId}`);
         const newDevice = await pool.query(
             "INSERT INTO devices (device_name, device_id, location, user_id) VALUES ($1, $2, $3, $4) RETURNING *",
             [deviceName, deviceId, location, userId]
@@ -158,7 +130,13 @@ router.post("/devices/add", verifyToken, async (req, res) => {
 
         res.status(201).json({ msg: "เพิ่มอุปกรณ์สำเร็จ", device: newDevice.rows[0] });
     } catch (err) {
-        console.error("Error adding device:", err);
+        console.error("Add device error:", err);
+        
+        // เช็คกรณี Database ไม่มีคอลัมน์ user_id
+        if (err.message.includes('column "user_id" of relation "devices" does not exist')) {
+            return res.status(500).json({ error: "Database Error: ตาราง devices ขาดคอลัมน์ user_id" });
+        }
+
         res.status(500).json({ error: "Server Error " + err.message });
     }
 });
