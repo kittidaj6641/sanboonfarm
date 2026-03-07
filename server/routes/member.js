@@ -87,7 +87,7 @@ router.get("/login-logs", verifyToken, async (req, res) => {
 });
 
 // ดึงข้อมูล water_quality 8 ตัวล่าสุด
-router.get("/water-quality", verifyToken, async (req, res) => {
+router.get("/water-quality", async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM water_quality ORDER BY recorded_at DESC LIMIT 8");
         res.json(result.rows);
@@ -123,7 +123,7 @@ router.post('/water-quality-sensor', async (req, res) => {
 // ==========================================
 
 // 🔥 GET /member/devices - ดึงข้อมูลอุปกรณ์ทั้งหมด
-router.get('/devices', verifyToken, async (req, res) => {
+router.get('/devices', async (req, res) => {
     console.log('📥 GET /member/devices');
     try {
         const result = await pool.query('SELECT * FROM devices ORDER BY added_at DESC');
